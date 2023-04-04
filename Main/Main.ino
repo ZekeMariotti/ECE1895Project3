@@ -1,3 +1,8 @@
+#include <Adafruit_GFX.h>
+#include <gfxfont.h>
+//#include <SD.h>
+#include <Adafruit_ST7735.h>
+#include <EEPROM.h>
 #include <Wire.h> 
 #include "DFRobotDFPlayerMini.h"
 #include "SoftwareSerial.h"
@@ -12,6 +17,10 @@ DFRobotDFPlayerMini DFPlayer;
 // Global variables:
 // Game variables
 bool success = false;
+int selectedGame = 0;
+int mainMenuRows = 3;
+int mainMenuColumns = 3;
+int numGames = 3;
 
 // Timer variables
 unsigned long previousTime = 0, currentTime = 0;
@@ -85,6 +94,49 @@ void setup() {
 
 // Main Loop
 void loop() {
+  readInputs();
+
+  // Change game selction
+  if(joystickLeftInput == true && selectedGame >= 2){
+    selectedGame--;            
+  }
+  else if(joystickUpInput == true && selectedGame > mainMenuColumns){
+    selectedGame -= mainMenuColumns;
+  }
+  else if(joystickRightInput == true && selectedGame < numGames){
+    selectedGame++;
+  }
+  else if(joystickDownInput == true && selectedGame <= numGames-mainMenuColumns){
+    selectedGame += mainMenuColumns;
+  }
+
+  if(startButtonInput == true){
+    switch(selectedGame){
+      case 1:
+        gameOne();
+        break;
+      case 2:
+        gameTwo();
+        break;
+      case 3:      
+        gameThree();
+        break;
+    }        
+  }
+}
+
+// Game One:
+void gameOne(){
+  
+}
+
+// Game Two:
+void gameTwo(){
+
+}
+
+// Game Three:
+void gameThree(){
 
 }
 
