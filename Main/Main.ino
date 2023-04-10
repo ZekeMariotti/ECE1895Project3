@@ -1,18 +1,23 @@
+#include <SPI.h>
 #include <Adafruit_GFX.h>
+#include <Adafruit_ST7735.h>
+
 #include <gfxfont.h>
 //#include <SD.h>
-#include <Adafruit_ST7735.h>
 #include <EEPROM.h>
 #include <Wire.h> 
 #include "DFRobotDFPlayerMini.h"
 #include "SoftwareSerial.h"
 
-// LCD Setup
-
-
-// DFPlayer Setup
-SoftwareSerial SoftwareSerial(10, 11); // RX, TX
-DFRobotDFPlayerMini DFPlayer;
+// Color definitions
+#define BLACK    0x0000
+#define BLUE     0x001F
+#define RED      0xF800
+#define GREEN    0x07E0
+#define CYAN     0x07FF
+#define MAGENTA  0xF81F
+#define YELLOW   0xFFE0 
+#define WHITE    0xFFFF
 
 // Global variables:
 // Game variables
@@ -52,17 +57,35 @@ int coinSlotButtonPin = 4;
 // Pin for Start button
 int startButtonPin = 9;
 
+// Pins for DFPlayer
+int DFPlayer_RX = 10;
+int DFPlayer_TX = 11;
+
+// Pins for LCD
+int lcd_RST = 0;
+int lcd_DC = 23;
+int lcd_CS = 24;
+int lcd_MOSI = 25;
+int lcd_SCK = 26;
+
+// LCD Setup
+//Adafruit_ST7735 lcd = Adafruit_ST7735(lcd_CS, lcd_DC, lcd_MOSI, lcd_SCK, lcd_RST);
+Adafruit_ST7735 lcd = Adafruit_ST7735(lcd_CS, lcd_DC, lcd_RST);
+
+// DFPlayer Setup
+SoftwareSerial SoftwareSerial(DFPlayer_RX, DFPlayer_TX); // RX, TX
+DFRobotDFPlayerMini DFPlayer;
+
 // Setup default values for the board
 void setup() {
-  // LCD setup
-  
-
-  // DFPlayer Setup
-  SoftwareSerial.begin(9600);
   Serial.begin(9600);
-
+  SoftwareSerial.begin(9600);
   Serial.print("Loading Game...");
-  delay(1000);
+
+  // lcd
+  lcd.initR(INITR_BLACKTAB);
+
+  /*delay(1000);
   currentTime = millis();
 
   while (!DFPlayer.begin(SoftwareSerial)) {
@@ -74,7 +97,7 @@ void setup() {
     }
   }
 
-  DFPlayer.volume(25);
+  DFPlayer.volume(25);*/
 
   // pinMode Setups
   pinMode(joystickLeftPin, INPUT);
@@ -88,13 +111,24 @@ void setup() {
   pinMode(coinSlotButtonPin, INPUT);
   pinMode(startButtonPin, INPUT);
 
+  pinMode(lcd_DC, OUTPUT);
+  pinMode(lcd_CS, OUTPUT);
+  pinMode(lcd_MOSI, OUTPUT);
+  pinMode(lcd_SCK, OUTPUT);  
+
   // Use analog input to generate random noise to choose a correct input
   randomSeed(analogRead(0));
+
+  Serial.print("lcd test\n");
+  lcd.print("lcd test\n");
+  delay(500);
 }
 
 // Main Loop
 void loop() {
   readInputs();
+
+  
 
   // Change game selction
   if(joystickLeftInput == true && selectedGame >= 2){
