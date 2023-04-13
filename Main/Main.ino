@@ -9,12 +9,16 @@
 #include "DFRobotDFPlayerMini.h"
 #include "SoftwareSerial.h"
 
+#include <string.h>
+
 // Color definitions
 #define BLACK    0x0000
 #define BLUE     0x001F
 #define RED      0xF800
+#define ORANGE   0xF460
 #define GREEN    0x07E0
 #define CYAN     0x07FF
+#define PURPLE   0xA020F0
 #define MAGENTA  0xF81F
 #define YELLOW   0xFFE0 
 #define WHITE    0xFFFF
@@ -26,6 +30,173 @@ int selectedGame = 0;
 int mainMenuRows = 3;
 int mainMenuColumns = 3;
 int numGames = 3;
+
+// Game One: Tetris
+int cubeSize = 5;
+int gamePiece[64] = {0};
+int gameMatrix[10][20] = {0};
+int nextPiece = 0;
+int pieceRotation = 0;
+int xPos = 0;
+int yPos = 0;
+
+// Each piece is max 4 wide, 4 tall, and 4 rotations.
+// Pieces: I, L, J, T, S, Z, O
+const int piece_I[] = {
+  0,0,0,0,
+  1,1,1,1,
+  0,0,0,0,
+  0,0,0,0,
+
+  0,0,1,0,
+  0,0,1,0,
+  0,0,1,0,
+  0,0,1,0,
+  
+  0,0,0,0,
+  0,0,0,0,
+  1,1,1,1,
+  0,0,0,0,
+
+  0,1,0,0,
+  0,1,0,0,
+  0,1,0,0,
+  0,1,0,0,
+};
+
+const int piece_L[] = {
+  0,0,1,0,
+  1,1,1,0,
+  0,0,0,0,
+  0,0,0,0,
+  
+  0,1,0,0,
+  0,1,0,0,
+  0,1,1,0,
+  0,0,0,0,
+
+  0,0,0,0,
+  1,1,1,0,
+  1,0,0,0,
+  0,0,0,0,
+  
+  1,1,0,0,
+  0,1,0,0,
+  0,1,0,0,
+  0,0,0,0,
+};
+
+const int piece_J[] = {
+  1,0,0,0,
+  1,1,1,0,
+  0,0,0,0,
+  0,0,0,0,
+  
+  0,1,1,0,
+  0,1,0,0,
+  0,1,0,0,
+  0,0,0,0,
+
+  0,0,0,0,
+  1,1,1,0,
+  0,0,1,0,
+  0,0,0,0,
+  
+  0,1,0,0,
+  0,1,0,0,
+  1,1,0,0,
+  0,0,0,0,
+
+};
+
+const int piece_T[] = {
+  0,1,0,0,
+  1,1,1,0,
+  0,0,0,0,
+  0,0,0,0,
+
+  0,1,0,0,
+  0,1,1,0,
+  0,1,0,0,
+  0,0,0,0,
+  
+  0,0,0,0,
+  1,1,1,0,
+  0,1,0,0,
+  0,0,0,0,
+
+  0,1,0,0,
+  1,1,0,0,
+  0,1,0,0,
+  0,0,0,0,
+
+};
+
+const int piece_S[] = {
+  0,1,1,0,
+  1,1,0,0,
+  0,0,0,0,
+  0,0,0,0,
+
+  0,1,0,0,
+  0,1,1,0,
+  0,0,1,0,
+  0,0,0,0,
+
+  0,0,0,0,
+  0,1,1,0,
+  1,1,0,0,
+  0,0,0,0,
+
+  1,0,0,0,
+  1,1,0,0,
+  0,1,0,0,
+  0,0,0,0,
+};
+
+const int piece_Z[] = {
+  1,1,0,0,
+  0,1,1,0,
+  0,0,0,0,
+  0,0,0,0,
+  
+  0,0,1,0,
+  0,1,1,0,
+  0,1,0,0,
+  0,0,0,0,
+
+  0,0,0,0,
+  1,1,0,0,
+  0,1,1,0,
+  0,0,0,0,
+  
+  0,1,0,0,
+  1,1,0,0,
+  1,0,0,0,
+  0,0,0,0,
+};
+
+const int piece_O[] = {
+  1,1,0,0,
+  1,1,0,0,
+  0,0,0,0,
+  0,0,0,0,
+  
+  1,1,0,0,
+  1,1,0,0,
+  0,0,0,0,
+  0,0,0,0,
+  
+  1,1,0,0,
+  1,1,0,0,
+  0,0,0,0,
+  0,0,0,0,
+  
+  1,1,0,0,
+  1,1,0,0,
+  0,0,0,0,
+  0,0,0,0,
+};
 
 // Timer variables
 unsigned long previousTime = 0, currentTime = 0;
@@ -61,7 +232,7 @@ int startButtonPin = 9;
 int DFPlayer_RX = 10;
 int DFPlayer_TX = 11;
 
-// Pins for LCD
+// Pins for LCD (160x128)
 int lcd_RST = 0;
 int lcd_DC = 23;
 int lcd_CS = 24;
@@ -84,6 +255,14 @@ void setup() {
 
   // lcd
   lcd.initR(INITR_BLACKTAB);
+
+  lcd.setRotation(1);
+  lcd.fillScreen(BLACK);
+  lcd.setTextColor(RED);
+  lcd.setTextSize(2);
+  lcd.print("lcd test\n");
+
+  Serial.print("lcd test\n");
 
   /*delay(1000);
   currentTime = millis();
@@ -111,24 +290,19 @@ void setup() {
   pinMode(coinSlotButtonPin, INPUT);
   pinMode(startButtonPin, INPUT);
 
-  pinMode(lcd_DC, OUTPUT);
-  pinMode(lcd_CS, OUTPUT);
-  pinMode(lcd_MOSI, OUTPUT);
-  pinMode(lcd_SCK, OUTPUT);  
-
   // Use analog input to generate random noise to choose a correct input
   randomSeed(analogRead(0));
 
-  Serial.print("lcd test\n");
-  lcd.print("lcd test\n");
   delay(500);
 }
 
 // Main Loop
 void loop() {
   readInputs();
-
+  lcd.fillScreen(BLACK);
+  gameOne();
   
+  delay(500);
 
   // Change game selction
   if(joystickLeftInput == true && selectedGame >= 2){
@@ -159,9 +333,132 @@ void loop() {
   }
 }
 
-// Game One:
+// Game One: Tetris
+// Pieces: I, L, J, T, S, Z, O
 void gameOne(){
+  // Reset Starting variables
+  gameMatrix[10][20] = {0};
+  success = true;
+  bool collision = false;
+  pieceRotation = random(4); // temporary testing
   
+  // Draw game background
+  lcd.drawLine(54, 0, 54, 128, WHITE);
+  lcd.drawLine(105, 0, 105, 128, WHITE);
+
+  // Main game loop
+  while (success = true){
+    // Reset xPos, yPos, and collision
+    xPos = 4;
+    yPos = 0;
+    collision = false;
+    
+    // Color index (0 - 6)
+    nextPiece = random(7);
+    int pieceColorIndex = getNextPiece();
+
+    // While there is no piece collisions
+    while (yPos < 18 && collision == false) {   
+      drawGamePiece(55 + xPos*cubeSize, yPos*cubeSize-cubeSize, BLACK);
+      drawGamePiece(55 + xPos*cubeSize, yPos*cubeSize, getPieceColor());
+      yPos++;
+
+      for (int i = 0+pieceRotation*16; i <= 15+pieceRotation*16; i++){
+          if (gamePiece[i] == 1){
+            if (gameMatrix[xPos][yPos+1] != 0)
+              collision = true;
+          }
+      }
+      
+      delay(150);
+    }
+
+    // Loop through game piece array and set gameMatrix values  
+    for (int i = 0+pieceRotation*16; i <= 15+pieceRotation*16; i++){
+      gameMatrix[xPos+(i%4)][yPos+((i%16)/4)] = gamePiece[i]*pieceColorIndex;
+    }
+
+    printGameMatrix();
+
+    //delay(500000);
+  }
+}
+
+void drawGamePiece(int x1, int y1, int color){
+  for (int i = 0+pieceRotation*16; i <= 15+pieceRotation*16; i++){
+    if (gamePiece[i] == 1){
+      lcd.fillRect(x1+cubeSize*(i%4), y1+cubeSize*((i%16)/4), cubeSize, cubeSize, color);    
+    }
+  }
+}
+
+int getNextPiece(){
+  switch (nextPiece){
+    case 0:
+      setGamePiece(piece_I);
+      return 0;
+      break;
+    case 1:
+      setGamePiece(piece_L);
+      return 1;
+      break;
+    case 2:
+      setGamePiece(piece_J);
+      return 2;
+      break;
+    case 3:
+      setGamePiece(piece_T);
+      return 3;
+      break;
+    case 4:
+      setGamePiece(piece_S);
+      return 4;
+      break;
+    case 5:
+      setGamePiece(piece_Z);
+      return 5;
+      break;
+    case 6:
+      setGamePiece(piece_O);
+      return 6;
+      break;    
+  }
+}
+
+int getPieceColor(){
+  switch (nextPiece){
+    case 0:
+      return CYAN;
+    case 1:
+      return ORANGE;
+    case 2:
+      return BLUE;
+    case 3:
+      return PURPLE;
+    case 4:
+      return GREEN;
+    case 5:
+      return RED;
+    case 6:
+      return YELLOW;
+      break;      
+  }  
+}
+
+void setGamePiece(int piece[64]){
+  for (int i=0; i<=63; i++){
+    gamePiece[i] = piece[i];
+  }  
+}
+
+void printGameMatrix(){
+  for (int i = 0; i <= 19; i++){
+    for (int j = 0; j <= 9; j++){
+      int value = gameMatrix[j][i];
+      Serial.print(value);
+    }
+    Serial.print("\n");
+  }
 }
 
 // Game Two:
