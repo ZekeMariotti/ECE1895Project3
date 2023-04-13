@@ -358,14 +358,14 @@ void gameOne(){
     int pieceColorIndex = getNextPiece();
 
     // While there is no piece collisions
-    while (yPos < 18 && collision == false) {   
-      drawGamePiece(55 + xPos*cubeSize, yPos*cubeSize-cubeSize, BLACK);
-      drawGamePiece(55 + xPos*cubeSize, yPos*cubeSize, getPieceColor());
+    while (yPos < 17 && collision == false) {   
+      drawGamePiece(55 + xPos*cubeSize, 30+yPos*cubeSize-cubeSize, BLACK);
+      drawGamePiece(55 + xPos*cubeSize, 30+yPos*cubeSize, getPieceColor());
       yPos++;
 
       for (int i = 0+pieceRotation*16; i <= 15+pieceRotation*16; i++){
           if (gamePiece[i] == 1){
-            if (gameMatrix[xPos][yPos+1] != 0)
+            if (gameMatrix[xPos+(i%4)][yPos+((i%16)/4)+1] != 0)
               collision = true;
           }
       }
@@ -375,7 +375,9 @@ void gameOne(){
 
     // Loop through game piece array and set gameMatrix values  
     for (int i = 0+pieceRotation*16; i <= 15+pieceRotation*16; i++){
-      gameMatrix[xPos+(i%4)][yPos+((i%16)/4)] = gamePiece[i]*pieceColorIndex;
+      if (gamePiece[i] != 0){
+        gameMatrix[xPos+(i%4)][yPos+((i%16)/4)] = gamePiece[i]*pieceColorIndex;
+      }
     }
 
     printGameMatrix();
@@ -459,6 +461,7 @@ void printGameMatrix(){
     }
     Serial.print("\n");
   }
+  Serial.print("\n");
 }
 
 // Game Two:
