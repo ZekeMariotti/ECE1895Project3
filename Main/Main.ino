@@ -515,11 +515,11 @@ void drawGameMatrix(){
     for (int j = 0; j <= 9; j++){
       // if zero, don't create white outline
       if (gameMatrix[j][i] == 0){
-        lcd.fillRect(55 + j*blockSize, 21 + i*blockSize, blockSize, blockSize, getPieceColor(gameMatrix[j][i]));
+        lcd.fillRect(55 + j*blockSize, 22 + i*blockSize, blockSize, blockSize, getPieceColor(gameMatrix[j][i]));
       }
       else{
-        lcd.drawRect(55 + j*blockSize, 21 + i*blockSize, blockSize, blockSize, WHITE);
-        lcd.fillRect(55 + j*blockSize+1, 21 + i*blockSize+1, blockSize-1, blockSize-1, getPieceColor(gameMatrix[j][i]));
+        lcd.drawRect(55 + j*blockSize, 22 + i*blockSize, blockSize, blockSize, WHITE);
+        lcd.fillRect(55 + j*blockSize+1, 22 + i*blockSize+1, blockSize-1, blockSize-1, getPieceColor(gameMatrix[j][i]));
       }
     } 
   }
