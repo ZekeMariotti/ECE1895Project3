@@ -360,6 +360,9 @@ void gameOne(){
       if (i == 21){
         gameMatrix[j][i] = -1;
       }
+      if (i == 20 && j!=9){
+        gameMatrix[j][i] = 1;
+      }
       else{
         gameMatrix[j][i] = 0;
       }
@@ -370,6 +373,7 @@ void gameOne(){
   bool collision = false;
   bool leftCollision = false;
   bool rightCollision = false;
+  bool rowOccupied = false;
   pieceRotation = 1;
   //pieceRotation = random(4); // temporary testing
   
@@ -454,6 +458,27 @@ void gameOne(){
       }
     }
 
+    // Check if an entire row is occupied
+    for (int i = 1; i <= 20; i++){
+      rowOccupied = true;
+
+      for (int j = 0; j <= 9; j++){
+        if (gameMatrix[i][j] == 0){
+          rowOccupied = false;          
+        }
+      }
+
+      if (rowOccupied == true){
+        for (int m = i; m >= 1; m--){
+          for (int n = 0; n <= 9; n++){
+            gameMatrix[m][n] = gameMatrix[m+1][n];            
+          }
+        }
+      }
+
+      drawGameMatrix();      
+    }
+
     // Check if top of gameMatrix is occupied
     for (int i = 0; i <= 9; i++){
       if (gameMatrix[i][1] != 0){
@@ -463,9 +488,16 @@ void gameOne(){
     }
 
     printGameMatrix(); // temporary 
+  }
+}
 
-    
-    //delay(500000);
+void drawGameMatrix(){
+  lcd.fillRect(55, 21, 104, 126, BLACK);
+  
+  for (int i = 1; i <= 20; i++){
+    for (int j = 0; j <= 9; j++){
+      lcd.fillRect(55 + j*blockSize, 21 + i*blockSize, blockSize, blockSize, getPieceColor[gameMatrix[i][j]]);
+    } 
   }
 }
 
