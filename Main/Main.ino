@@ -33,13 +33,16 @@ int mainMenuColumns = 3;
 int numGames = 3;
 
 // Game One: Tetris
-int cubeSize = 5;
+int blockSize = 5;
 int gamePiece[64] = {0};
 int gameMatrix[10][22] = {0};
+
 int nextPiece = 0;
 int pieceRotation = 0;
 int xPos = 0;
 int yPos = 0;
+int firstLeftColumn = 0;
+int firstRightColumn = 0;
 
 // Each piece is max 4 wide, 4 tall, and 4 rotations.
 // Pieces: I, L, J, T, S, Z, O
@@ -365,6 +368,8 @@ void gameOne(){
 
   success = true;
   bool collision = false;
+  bool leftCollision = false;
+  bool rightCollision = false;
   pieceRotation = 1;
   //pieceRotation = random(4); // temporary testing
   
@@ -391,21 +396,28 @@ void gameOne(){
     // While there is no piece collisions
     while (collision == false) {
       readInputs();
-      if (startButtonInput == true && xPos < 9){
+
+      // If next square to the right is occupied, rightCollision = true
+      rightCollision = false;
+      for (int i = 0+pieceRotation*16; i <= 15+pieceRotation*16; i++){
+          if (gamePiece[i] == 1){
+            if (gameMatrix[xPos+(i%4)+1][yPos+((i%16)/4)] != 0)
+              rightCollision = true;              
+          }
+      }
+
+      if (startButtonInput == true && rightCollision == false && xPos < (9-firstRightColumn)){
         xPos++;
       }
 
       if (yPos == 0){
-        drawGamePiece(55 + xPos*cubeSize, 21+(yPos)*cubeSize, getPieceColor());
+        drawGamePiece(55 + xPos*blockSize, 21+(yPos)*blockSize, getPieceColor());
       }
       else{   
-        drawGamePiece(55 + xPos*cubeSize, 21+(yPos)*cubeSize, getPieceColor());
+        drawGamePiece(55 + xPos*blockSize, 21+(yPos)*blockSize, getPieceColor());
       }
 
-      Serial.print(yPos);
-      Serial.print("\n");
-
-      // If next square is occupied, collision = true
+      // If next square below is occupied, collision = true
       for (int i = 0+pieceRotation*16; i <= 15+pieceRotation*16; i++){
           if (gamePiece[i] == 1){
             if (gameMatrix[xPos+(i%4)][yPos+((i%16)/4)+1] != 0)
@@ -417,7 +429,7 @@ void gameOne(){
       delay(150);
 
       if (collision == false){
-        drawGamePiece(55 + xPos*cubeSize, 21+(yPos)*cubeSize, BLACK);
+        drawGamePiece(55 + xPos*blockSize, 21+(yPos)*blockSize, BLACK);
         yPos++;
       }      
     }
@@ -447,42 +459,59 @@ void gameOne(){
 void drawGamePiece(int x1, int y1, int color){
   for (int i = 0+pieceRotation*16; i <= 15+pieceRotation*16; i++){
     if (gamePiece[i] == 1){
-      lcd.fillRect(x1+cubeSize*(i%4), y1+cubeSize*((i%16)/4), cubeSize, cubeSize, color);    
+      lcd.fillRect(x1+blockSize*(i%4), y1+blockSize*((i%16)/4), blockSize, blockSize, color);    
     }
   }
 }
 
 int getNextPiece(){
+  int piece = 0;
+  firstLeftColumn = 0;
+  firstRightColumn = 0;
+  
   switch (nextPiece){
     case 1:
       setGamePiece(piece_I);
-      return 1;
+      piece = 1;
       break;
     case 2:
       setGamePiece(piece_L);
-      return 2;
+      piece = 2;
       break;
     case 3:
       setGamePiece(piece_J);
-      return 3;
+      piece = 3;
       break;
     case 4:
       setGamePiece(piece_T);
-      return 4;
+      piece = 4;
       break;
     case 5:
       setGamePiece(piece_S);
-      return 5;
+      piece = 5;
       break;
     case 6:
       setGamePiece(piece_Z);
-      return 6;
+      piece = 6;
       break;
     case 7:
       setGamePiece(piece_O);
-      return 7;
-      break;    
+      piece = 7;
+      break; 
   }
+
+  // Set the first column from the right of a piece that is occupied
+  for (int i = 3; i >= 1; i--){
+    for (int j = 0; j <= 3; j++){
+      if (gamePiece[j*4+i+16*pieceRotation] != 0){
+        firstRightColumn = i;
+        break;
+      }       
+    }    
+    if(firstRightColumn != 0) { break; }  
+  }
+
+  return piece;
 }
 
 int getPieceColor(){
@@ -537,6 +566,7 @@ void gameThree(){
 }
 
 // Reads all input pins into bool variables
+// Inputs set to pullup are inverted (if LOW -> input = true)
 void readInputs() {
   joystickLeftInput = (digitalRead(joystickLeftPin) == HIGH);
   joystickUpInput = (digitalRead(joystickUpPin) == HIGH);
