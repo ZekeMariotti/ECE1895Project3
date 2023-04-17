@@ -397,6 +397,15 @@ void gameOne(){
     while (collision == false) {
       readInputs();
 
+      // If next square to the left is occupied, leftCollision = true
+      leftCollision = false;
+      for (int i = 0+pieceRotation*16; i <= 15+pieceRotation*16; i++){
+          if (gamePiece[i] == 1){
+            if (gameMatrix[xPos+(i%4)-1][yPos+((i%16)/4)] != 0)
+              leftCollision = true;              
+          }
+      }
+
       // If next square to the right is occupied, rightCollision = true
       rightCollision = false;
       for (int i = 0+pieceRotation*16; i <= 15+pieceRotation*16; i++){
@@ -406,7 +415,11 @@ void gameOne(){
           }
       }
 
-      if (startButtonInput == true && rightCollision == false && xPos < (9-firstRightColumn)){
+      if (startButtonInput == true && leftCollision == false && xPos > (0-firstLeftColumn)){
+        xPos--;
+      }
+
+      if (joystickRightInput == true && rightCollision == false && xPos < (9-firstRightColumn)){
         xPos++;
       }
 
@@ -466,8 +479,8 @@ void drawGamePiece(int x1, int y1, int color){
 
 int getNextPiece(){
   int piece = 0;
-  firstLeftColumn = 0;
-  firstRightColumn = 0;
+  firstLeftColumn = -1;
+  firstRightColumn = -1;
   
   switch (nextPiece){
     case 1:
@@ -500,6 +513,17 @@ int getNextPiece(){
       break; 
   }
 
+  // Set the first column from the left of a piece that is occupied
+  for (int i = 0; i <= 2; i++){
+    for (int j = 0; j <= 3; j++){
+      if (gamePiece[j*4+i+16*pieceRotation] != 0){
+        firstLeftColumn = i;
+        break;
+      }       
+    }    
+    if(firstLeftColumn != -1) { break; }  
+  }
+
   // Set the first column from the right of a piece that is occupied
   for (int i = 3; i >= 1; i--){
     for (int j = 0; j <= 3; j++){
@@ -508,7 +532,7 @@ int getNextPiece(){
         break;
       }       
     }    
-    if(firstRightColumn != 0) { break; }  
+    if(firstRightColumn != -1) { break; }  
   }
 
   return piece;
