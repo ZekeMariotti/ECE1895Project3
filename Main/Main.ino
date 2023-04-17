@@ -26,7 +26,8 @@
 // Global variables:
 // Game variables
 bool success = false;
-int selectedGame = 0;
+bool startScreen = false;
+int selectedGame = 1;
 int mainMenuRows = 3;
 int mainMenuColumns = 3;
 int numGames = 3;
@@ -34,7 +35,7 @@ int numGames = 3;
 // Game One: Tetris
 int cubeSize = 5;
 int gamePiece[64] = {0};
-int gameMatrix[10][20] = {0};
+int gameMatrix[10][22] = {0};
 int nextPiece = 0;
 int pieceRotation = 0;
 int xPos = 0;
@@ -288,7 +289,8 @@ void setup() {
   pinMode(buttonTwoPin, INPUT);
 
   pinMode(coinSlotButtonPin, INPUT);
-  pinMode(startButtonPin, INPUT);
+
+  pinMode(startButtonPin, INPUT_PULLUP);
 
   // Use analog input to generate random noise to choose a correct input
   randomSeed(analogRead(0));
@@ -298,11 +300,15 @@ void setup() {
 
 // Main Loop
 void loop() {
-  readInputs();
-  lcd.fillScreen(BLACK);
-  gameOne();
+  // Show start screen
+  if (startScreen == false){
+    lcd.fillScreen(BLACK);
+    lcd.setCursor(0, 0);
+    lcd.print("Press Start");
+    startScreen = true;
+  }  
   
-  delay(500);
+  readInputs();
 
   // Change game selction
   if(joystickLeftInput == true && selectedGame >= 2){
@@ -319,6 +325,8 @@ void loop() {
   }
 
   if(startButtonInput == true){
+    startScreen = false;
+    
     switch(selectedGame){
       case 1:
         gameOne();
@@ -331,46 +339,87 @@ void loop() {
         break;
     }        
   }
+
+  // Reset selectedGame to 1
+  selectedGame = 1;  
 }
+
+
+
+
 
 // Game One: Tetris
 // Pieces: I, L, J, T, S, Z, O
 void gameOne(){
   // Reset Starting variables
-  gameMatrix[10][20] = {0};
+  for (int i = 0; i <= 21; i++){
+    for (int j = 0; j <= 9; j++){
+      if (i == 21){
+        gameMatrix[j][i] = -1;
+      }
+      else{
+        gameMatrix[j][i] = 0;
+      }
+    }
+  }
+
   success = true;
   bool collision = false;
-  pieceRotation = random(4); // temporary testing
+  pieceRotation = 1;
+  //pieceRotation = random(4); // temporary testing
   
   // Draw game background
-  lcd.drawLine(54, 0, 54, 128, WHITE);
-  lcd.drawLine(105, 0, 105, 128, WHITE);
+  lcd.fillScreen(BLACK);
+  lcd.drawLine(54, 20, 54, 128, WHITE);
+  lcd.drawLine(105, 20, 105, 128, WHITE);
+  lcd.drawLine(54, 20, 105, 20, WHITE);
+  lcd.drawLine(54, 127, 105, 127, WHITE);
+
+  
 
   // Main game loop
-  while (success = true){
+  while (success == true){
     // Reset xPos, yPos, and collision
-    xPos = 4;
+    xPos = 3;
     yPos = 0;
     collision = false;
     
-    // Color index (0 - 6)
-    nextPiece = random(7);
+    // Color index (1 - 7)
+    nextPiece = random(1, 8);
     int pieceColorIndex = getNextPiece();
 
     // While there is no piece collisions
-    while (yPos < 17 && collision == false) {   
-      drawGamePiece(55 + xPos*cubeSize, 30+yPos*cubeSize-cubeSize, BLACK);
-      drawGamePiece(55 + xPos*cubeSize, 30+yPos*cubeSize, getPieceColor());
-      yPos++;
+    while (collision == false) {
+      readInputs();
+      if (startButtonInput == true && xPos < 9){
+        xPos++;
+      }
 
+      if (yPos == 0){
+        drawGamePiece(55 + xPos*cubeSize, 21+(yPos)*cubeSize, getPieceColor());
+      }
+      else{   
+        drawGamePiece(55 + xPos*cubeSize, 21+(yPos)*cubeSize, getPieceColor());
+      }
+
+      Serial.print(yPos);
+      Serial.print("\n");
+
+      // If next square is occupied, collision = true
       for (int i = 0+pieceRotation*16; i <= 15+pieceRotation*16; i++){
           if (gamePiece[i] == 1){
             if (gameMatrix[xPos+(i%4)][yPos+((i%16)/4)+1] != 0)
-              collision = true;
+              collision = true;              
           }
       }
-      
+
+      // Delay between piece moving
       delay(150);
+
+      if (collision == false){
+        drawGamePiece(55 + xPos*cubeSize, 21+(yPos)*cubeSize, BLACK);
+        yPos++;
+      }      
     }
 
     // Loop through game piece array and set gameMatrix values  
@@ -380,8 +429,17 @@ void gameOne(){
       }
     }
 
-    printGameMatrix();
+    // Check if top of gameMatrix is occupied
+    for (int i = 0; i <= 9; i++){
+      if (gameMatrix[i][1] != 0){
+        success = false;
+        break;        
+      }
+    }
 
+    printGameMatrix(); // temporary 
+
+    
     //delay(500000);
   }
 }
@@ -396,52 +454,52 @@ void drawGamePiece(int x1, int y1, int color){
 
 int getNextPiece(){
   switch (nextPiece){
-    case 0:
-      setGamePiece(piece_I);
-      return 0;
-      break;
     case 1:
-      setGamePiece(piece_L);
+      setGamePiece(piece_I);
       return 1;
       break;
     case 2:
-      setGamePiece(piece_J);
+      setGamePiece(piece_L);
       return 2;
       break;
     case 3:
-      setGamePiece(piece_T);
+      setGamePiece(piece_J);
       return 3;
       break;
     case 4:
-      setGamePiece(piece_S);
+      setGamePiece(piece_T);
       return 4;
       break;
     case 5:
-      setGamePiece(piece_Z);
+      setGamePiece(piece_S);
       return 5;
       break;
     case 6:
-      setGamePiece(piece_O);
+      setGamePiece(piece_Z);
       return 6;
+      break;
+    case 7:
+      setGamePiece(piece_O);
+      return 7;
       break;    
   }
 }
 
 int getPieceColor(){
   switch (nextPiece){
-    case 0:
-      return CYAN;
     case 1:
-      return ORANGE;
+      return CYAN;
     case 2:
-      return BLUE;
+      return ORANGE;
     case 3:
-      return PURPLE;
+      return BLUE;
     case 4:
-      return GREEN;
+      return PURPLE;
     case 5:
-      return RED;
+      return GREEN;
     case 6:
+      return RED;
+    case 7:
       return YELLOW;
       break;      
   }  
@@ -454,7 +512,11 @@ void setGamePiece(int piece[64]){
 }
 
 void printGameMatrix(){
-  for (int i = 0; i <= 19; i++){
+  for (int i = 0; i <= 20; i++){
+    Serial.print(i);
+    Serial.print(": ");
+    if (i < 10) { Serial.print(" "); }
+    
     for (int j = 0; j <= 9; j++){
       int value = gameMatrix[j][i];
       Serial.print(value);
@@ -483,7 +545,7 @@ void readInputs() {
   buttonOneInput = (digitalRead(buttonOnePin) == HIGH);
   buttonTwoInput = (digitalRead(buttonTwoPin) == HIGH);
   coinSlotButtonInput = (digitalRead(coinSlotButtonPin) == HIGH);
-  startButtonInput = (digitalRead(startButtonPin) == HIGH);
+  startButtonInput = (digitalRead(startButtonPin) == LOW);
 }
 
 /* Tests if inputs are correct based on correctInput
