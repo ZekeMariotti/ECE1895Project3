@@ -43,6 +43,7 @@ int xPos = 0;
 int yPos = 0;
 int firstLeftColumn = 0;
 int firstRightColumn = 0;
+int gameDelay = 0;
 
 // Each piece is max 4 wide, 4 tall, and 4 rotations.
 // Pieces: I, L, J, T, S, Z, O
@@ -283,15 +284,15 @@ void setup() {
   DFPlayer.volume(25);*/
 
   // pinMode Setups
-  pinMode(joystickLeftPin, INPUT);
-  pinMode(joystickUpPin, INPUT);
-  pinMode(joystickRightPin, INPUT);
-  pinMode(joystickDownPin, INPUT);
+  pinMode(joystickLeftPin, INPUT_PULLUP);
+  pinMode(joystickUpPin, INPUT_PULLUP);
+  pinMode(joystickRightPin, INPUT_PULLUP);
+  pinMode(joystickDownPin, INPUT_PULLUP);
 
-  pinMode(buttonOnePin, INPUT);
-  pinMode(buttonTwoPin, INPUT);
+  pinMode(buttonOnePin, INPUT_PULLUP);
+  pinMode(buttonTwoPin, INPUT_PULLUP);
 
-  pinMode(coinSlotButtonPin, INPUT);
+  pinMode(coinSlotButtonPin, INPUT_PULLUP);
 
   pinMode(startButtonPin, INPUT_PULLUP);
 
@@ -356,13 +357,10 @@ void loop() {
 void gameOne(){
   // Reset Starting variables
   for (int i = 0; i <= 21; i++){
-    for (int j = 0; j <= 9; j++){
+    for (int j = 0; j <= 9; j++){     
       if (i == 21){
         gameMatrix[j][i] = -1;
-      }
-      if (i == 20 && j!=9){
-        gameMatrix[j][i] = 1;
-      }
+      }    
       else{
         gameMatrix[j][i] = 0;
       }
@@ -374,8 +372,8 @@ void gameOne(){
   bool leftCollision = false;
   bool rightCollision = false;
   bool rowOccupied = false;
-  pieceRotation = 1;
-  //pieceRotation = random(4); // temporary testing
+  pieceRotation = 0;
+  gameDelay = 75*2;
   
   // Draw game background
   lcd.fillScreen(BLACK);
@@ -398,40 +396,58 @@ void gameOne(){
     int pieceColorIndex = getNextPiece();
 
     // While there is no piece collisions
+    currentTime = millis();
     while (collision == false) {
-      readInputs();
+      for (int k = 0; k <= gameDelay/75; k++){
+        readInputs();
 
-      // If next square to the left is occupied, leftCollision = true
-      leftCollision = false;
-      for (int i = 0+pieceRotation*16; i <= 15+pieceRotation*16; i++){
-          if (gamePiece[i] == 1){
-            if (gameMatrix[xPos+(i%4)-1][yPos+((i%16)/4)] != 0)
-              leftCollision = true;              
-          }
-      }
+        // If next square to the left is occupied, leftCollision = true
+        leftCollision = false;
+        for (int i = 0+pieceRotation*16; i <= 15+pieceRotation*16; i++){
+            if (gamePiece[i] == 1){
+              if (gameMatrix[xPos+(i%4)-1][yPos+((i%16)/4)] != 0)
+                leftCollision = true;              
+            }
+        }
 
-      // If next square to the right is occupied, rightCollision = true
-      rightCollision = false;
-      for (int i = 0+pieceRotation*16; i <= 15+pieceRotation*16; i++){
-          if (gamePiece[i] == 1){
-            if (gameMatrix[xPos+(i%4)+1][yPos+((i%16)/4)] != 0)
-              rightCollision = true;              
-          }
-      }
+        // If next square to the right is occupied, rightCollision = true
+        rightCollision = false;
+        for (int i = 0+pieceRotation*16; i <= 15+pieceRotation*16; i++){
+            if (gamePiece[i] == 1){
+              if (gameMatrix[xPos+(i%4)+1][yPos+((i%16)/4)] != 0)
+                rightCollision = true;              
+            }
+        }
 
-      if (startButtonInput == true && leftCollision == false && xPos > (0-firstLeftColumn)){
-        xPos--;
-      }
+        if (startButtonInput == true && leftCollision == false && xPos > (0-firstLeftColumn)){
+          xPos--;
+        }
 
-      if (joystickRightInput == true && rightCollision == false && xPos < (9-firstRightColumn)){
-        xPos++;
-      }
+        if (joystickRightInput == true && rightCollision == false && xPos < (9-firstRightColumn)){
+          xPos++;
+        }      
+        
+        if (buttonOneInput == true && (millis() - currentTime > 130)){
+          pieceRotation = ++pieceRotation%4;
+          currentTime = millis();
+        }
+        
 
-      if (yPos == 0){
-        drawGamePiece(55 + xPos*blockSize, 21+(yPos)*blockSize, getPieceColor());
-      }
-      else{   
-        drawGamePiece(55 + xPos*blockSize, 21+(yPos)*blockSize, getPieceColor());
+
+        // Draw pieces
+        if (yPos == 0){
+          drawGamePiece(55 + xPos*blockSize, 22+(yPos)*blockSize, getPieceColor(nextPiece));
+        }
+        else{   
+          drawGamePiece(55 + xPos*blockSize, 22+(yPos)*blockSize, getPieceColor(nextPiece));
+        }
+
+        // Delay before piece moves
+        delay(75);
+
+        if (k!=gameDelay/75){
+          drawGamePiece(55 + xPos*blockSize, 22+(yPos)*blockSize, BLACK);
+        }                         
       }
 
       // If next square below is occupied, collision = true
@@ -442,11 +458,9 @@ void gameOne(){
           }
       }
 
-      // Delay between piece moving
-      delay(150);
-
+      // If no collision, erase piece from display and increase yPos
       if (collision == false){
-        drawGamePiece(55 + xPos*blockSize, 21+(yPos)*blockSize, BLACK);
+        drawGamePiece(55 + xPos*blockSize, 22+(yPos)*blockSize, BLACK);
         yPos++;
       }      
     }
@@ -463,20 +477,23 @@ void gameOne(){
       rowOccupied = true;
 
       for (int j = 0; j <= 9; j++){
-        if (gameMatrix[i][j] == 0){
-          rowOccupied = false;          
+        if (gameMatrix[j][i] == 0){
+          rowOccupied = false;
+          break;      
         }
       }
 
       if (rowOccupied == true){
         for (int m = i; m >= 1; m--){
           for (int n = 0; n <= 9; n++){
-            gameMatrix[m][n] = gameMatrix[m+1][n];            
+            gameMatrix[n][m] = gameMatrix[n][m-1];           
           }
         }
       }
-
-      drawGameMatrix();      
+      
+      if (rowOccupied == true){
+        drawGameMatrix();
+      }     
     }
 
     // Check if top of gameMatrix is occupied
@@ -492,11 +509,18 @@ void gameOne(){
 }
 
 void drawGameMatrix(){
-  lcd.fillRect(55, 21, 104, 126, BLACK);
+  lcd.fillRect(55, 21, 104-55, 126-21, BLACK);
   
   for (int i = 1; i <= 20; i++){
     for (int j = 0; j <= 9; j++){
-      lcd.fillRect(55 + j*blockSize, 21 + i*blockSize, blockSize, blockSize, getPieceColor[gameMatrix[i][j]]);
+      // if zero, don't create white outline
+      if (gameMatrix[j][i] == 0){
+        lcd.fillRect(55 + j*blockSize, 21 + i*blockSize, blockSize, blockSize, getPieceColor(gameMatrix[j][i]));
+      }
+      else{
+        lcd.drawRect(55 + j*blockSize, 21 + i*blockSize, blockSize, blockSize, WHITE);
+        lcd.fillRect(55 + j*blockSize+1, 21 + i*blockSize+1, blockSize-1, blockSize-1, getPieceColor(gameMatrix[j][i]));
+      }
     } 
   }
 }
@@ -504,7 +528,13 @@ void drawGameMatrix(){
 void drawGamePiece(int x1, int y1, int color){
   for (int i = 0+pieceRotation*16; i <= 15+pieceRotation*16; i++){
     if (gamePiece[i] == 1){
-      lcd.fillRect(x1+blockSize*(i%4), y1+blockSize*((i%16)/4), blockSize, blockSize, color);    
+      if (color == BLACK){
+        lcd.fillRect(x1+blockSize*(i%4), y1+blockSize*((i%16)/4), blockSize, blockSize, BLACK);    
+      }
+      else{
+        lcd.drawRect(x1+blockSize*(i%4), y1+blockSize*((i%16)/4), blockSize, blockSize, WHITE);
+        lcd.fillRect(x1+blockSize*(i%4)+1, y1+blockSize*((i%16)/4)+1, blockSize-1, blockSize-1, color);    
+      }
     }
   }
 }
@@ -570,8 +600,10 @@ int getNextPiece(){
   return piece;
 }
 
-int getPieceColor(){
-  switch (nextPiece){
+int getPieceColor(int nxtPiece){
+  switch (nxtPiece){
+    case 0:
+      return BLACK;
     case 1:
       return CYAN;
     case 2:
@@ -597,7 +629,7 @@ void setGamePiece(int piece[64]){
 }
 
 void printGameMatrix(){
-  for (int i = 0; i <= 20; i++){
+  for (int i = 0; i <= 21; i++){
     Serial.print(i);
     Serial.print(": ");
     if (i < 10) { Serial.print(" "); }
@@ -624,13 +656,13 @@ void gameThree(){
 // Reads all input pins into bool variables
 // Inputs set to pullup are inverted (if LOW -> input = true)
 void readInputs() {
-  joystickLeftInput = (digitalRead(joystickLeftPin) == HIGH);
-  joystickUpInput = (digitalRead(joystickUpPin) == HIGH);
-  joystickRightInput = (digitalRead(joystickRightPin) == HIGH);
-  joystickDownInput = (digitalRead(joystickDownPin) == HIGH);
-  buttonOneInput = (digitalRead(buttonOnePin) == HIGH);
-  buttonTwoInput = (digitalRead(buttonTwoPin) == HIGH);
-  coinSlotButtonInput = (digitalRead(coinSlotButtonPin) == HIGH);
+  joystickLeftInput = (digitalRead(joystickLeftPin) == LOW);
+  joystickUpInput = (digitalRead(joystickUpPin) == LOW);
+  joystickRightInput = (digitalRead(joystickRightPin) == LOW);
+  joystickDownInput = (digitalRead(joystickDownPin) == LOW);
+  buttonOneInput = (digitalRead(buttonOnePin) == LOW);
+  buttonTwoInput = (digitalRead(buttonTwoPin) == LOW);
+  coinSlotButtonInput = (digitalRead(coinSlotButtonPin) == LOW);
   startButtonInput = (digitalRead(startButtonPin) == LOW);
 }
 
