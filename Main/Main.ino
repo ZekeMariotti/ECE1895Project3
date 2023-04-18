@@ -430,6 +430,26 @@ void gameOne(){
         if (buttonOneInput == true && (millis() - currentTime > 130)){
           pieceRotation = ++pieceRotation%4;
           currentTime = millis();
+
+          getFirstColumns();
+
+          if (xPos == -2 && firstLeftColumn == 0){
+            xPos++;
+          }
+          if (xPos == -1 && firstLeftColumn == 0){
+            xPos++;
+          }
+
+          if (xPos == 9 && (firstRightColumn == 3 || firstRightColumn == 2)){
+            xPos--;
+          }
+          if (xPos == 8 && (firstRightColumn == 3 || firstRightColumn == 2)){
+            xPos--;
+          }
+
+          if (xPos == 7 && firstRightColumn == 3){
+            xPos--;
+          }                              
         }
         
 
@@ -541,8 +561,6 @@ void drawGamePiece(int x1, int y1, int color){
 
 int getNextPiece(){
   int piece = 0;
-  firstLeftColumn = -1;
-  firstRightColumn = -1;
   
   switch (nextPiece){
     case 1:
@@ -575,6 +593,15 @@ int getNextPiece(){
       break; 
   }
 
+  getFirstColumns();
+
+  return piece;
+}
+
+void getFirstColumns(){
+  firstLeftColumn = -1;
+  firstRightColumn = -1;
+
   // Set the first column from the left of a piece that is occupied
   for (int i = 0; i <= 2; i++){
     for (int j = 0; j <= 3; j++){
@@ -596,8 +623,6 @@ int getNextPiece(){
     }    
     if(firstRightColumn != -1) { break; }  
   }
-
-  return piece;
 }
 
 int getPieceColor(int nxtPiece){
