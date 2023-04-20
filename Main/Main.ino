@@ -314,18 +314,33 @@ void loop() {
   
   readInputs();
 
-  // Change game selction
+  // Change game selction 
   if(joystickLeftInput == true && selectedGame >= 2){
-    selectedGame--;            
+    selectedGame--;           
   }
   else if(joystickUpInput == true && selectedGame > mainMenuColumns){
     selectedGame -= mainMenuColumns;
   }
   else if(joystickRightInput == true && selectedGame < numGames){
     selectedGame++;
+
   }
   else if(joystickDownInput == true && selectedGame <= numGames-mainMenuColumns){
     selectedGame += mainMenuColumns;
+  }
+
+ // Test inputs
+  if(joystickLeftInput == true){  
+    Serial.print("joystickLeft\n");          
+  }
+  if(joystickUpInput == true){
+    Serial.print("joystickUp\n");
+  }
+  if(joystickRightInput == true){
+    Serial.print("joystickRight\n");
+  }
+  if(joystickDownInput == true){
+    Serial.print("joystickDown\n");
   }
 
   if(startButtonInput == true){
@@ -419,7 +434,7 @@ void gameOne(){
             }
         }
 
-        if (startButtonInput == true && leftCollision == false && xPos > (0-firstLeftColumn)){
+        if (joystickLeftInput == true && leftCollision == false && xPos > (0-firstLeftColumn)){
           xPos--;
         }
 
