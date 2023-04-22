@@ -31,6 +31,7 @@ int selectedGame = 1;
 int mainMenuRows = 3;
 int mainMenuColumns = 3;
 int numGames = 3;
+int score = 0;
 
 // Game One: Tetris
 int blockSize = 5;
@@ -44,6 +45,8 @@ int yPos = 0;
 int firstLeftColumn = 0;
 int firstRightColumn = 0;
 int gameDelay = 0;
+unsigned long rotationTime = 0;
+unsigned long moveTime = 0;
 
 // Each piece is max 4 wide, 4 tall, and 4 rotations.
 // Pieces: I, L, J, T, S, Z, O
@@ -218,20 +221,20 @@ bool startButtonInput = false;
 
 // Pins: 
 // Pins for joystick 
-int joystickLeftPin = 5;
-int joystickUpPin = 6;
-int joystickRightPin = 7;
-int joystickDownPin = 8;
+int joystickLeftPin = 4;
+int joystickUpPin = 5;
+int joystickRightPin = 6;
+int joystickDownPin = 7;
 
 // Pins for two input buttons
-int buttonOnePin = 12;
-int buttonTwoPin = 3;
+int buttonOnePin = 8;
+int buttonTwoPin = 9;
 
 // Pins for coin slot button
-int coinSlotButtonPin = 4;
+int coinSlotButtonPin = 3;
 
 // Pin for Start button
-int startButtonPin = 9;
+int startButtonPin = 12;
 
 // Pins for DFPlayer
 int DFPlayer_RX = 10;
@@ -323,25 +326,52 @@ void loop() {
   }
   else if(joystickRightInput == true && selectedGame < numGames){
     selectedGame++;
-
   }
   else if(joystickDownInput == true && selectedGame <= numGames-mainMenuColumns){
     selectedGame += mainMenuColumns;
   }
 
  // Test inputs
-  if(joystickLeftInput == true){  
+  if(joystickLeftInput == true){ 
+    lcd.fillScreen(BLACK);
+    lcd.setCursor(0, 0);
+    lcd.print("joystickLeft"); 
     Serial.print("joystickLeft\n");          
   }
   if(joystickUpInput == true){
+    lcd.fillScreen(BLACK);
+    lcd.setCursor(0, 0);
+    lcd.print("joystickUpInput"); 
     Serial.print("joystickUp\n");
   }
   if(joystickRightInput == true){
+    lcd.fillScreen(BLACK);
+    lcd.setCursor(0, 0);
+    lcd.print("joystickRightInput"); 
     Serial.print("joystickRight\n");
   }
   if(joystickDownInput == true){
+    lcd.fillScreen(BLACK);
+    lcd.setCursor(0, 0);
+    lcd.print("joystickDownInput"); 
     Serial.print("joystickDown\n");
   }
+  if(buttonOneInput == true){
+    lcd.fillScreen(BLACK);
+    lcd.setCursor(0, 0);
+    lcd.print("buttonOneInput"); 
+  }
+  if(buttonTwoInput == true){
+    lcd.fillScreen(BLACK);
+    lcd.setCursor(0, 0);
+    lcd.print("buttonTwoInput"); 
+  }
+  if(coinSlotButtonInput == true){
+    lcd.fillScreen(BLACK);
+    lcd.setCursor(0, 0);
+    lcd.print("coinSlotButtonInput");
+  }
+  // end test inputs
 
   if(startButtonInput == true){
     startScreen = false;
@@ -371,6 +401,17 @@ void loop() {
 // Pieces: I, L, J, T, S, Z, O
 void gameOne(){
   // Reset Starting variables
+  success = true;
+  score = 0;
+  bool collision = false;
+  bool leftCollision = false;
+  bool rightCollision = false;
+  bool rowOccupied = false;
+  bool rotated = false;
+  pieceRotation = 0;
+  gameDelay = 25*12; // Game delay needs to be multiple of 25 ms
+
+  // Reset gameMatrix
   for (int i = 0; i <= 21; i++){
     for (int j = 0; j <= 9; j++){     
       if (i == 21){
@@ -381,21 +422,13 @@ void gameOne(){
       }
     }
   }
-
-  success = true;
-  bool collision = false;
-  bool leftCollision = false;
-  bool rightCollision = false;
-  bool rowOccupied = false;
-  pieceRotation = 0;
-  gameDelay = 75*2;
   
   // Draw game background
   lcd.fillScreen(BLACK);
-  lcd.drawLine(54, 20, 54, 128, WHITE);
-  lcd.drawLine(105, 20, 105, 128, WHITE);
-  lcd.drawLine(54, 20, 105, 20, WHITE);
-  lcd.drawLine(54, 127, 105, 127, WHITE);
+  lcd.drawRect(54, 20, 52, 108, WHITE);
+  lcd.drawRect(2, 17, 44, 24, WHITE);
+
+  displayScore();
 
   
 
@@ -411,10 +444,11 @@ void gameOne(){
     int pieceColorIndex = getNextPiece();
 
     // While there is no piece collisions
-    currentTime = millis();
+    moveTime = millis();
+    rotationTime == millis();
     while (collision == false) {
-      for (int k = 0; k <= gameDelay/75; k++){
-        readInputs();
+      for (int k = 0; k <= gameDelay/25; k++){
+        readInputs();        
 
         // If next square to the left is occupied, leftCollision = true
         leftCollision = false;
@@ -433,18 +467,24 @@ void gameOne(){
                 rightCollision = true;              
             }
         }
-
-        if (joystickLeftInput == true && leftCollision == false && xPos > (0-firstLeftColumn)){
+        
+        if (joystickLeftInput == true && leftCollision == false && xPos > (0-firstLeftColumn) && (millis() - moveTime > 100)){
           xPos--;
+          moveTime = millis();
         }
 
-        if (joystickRightInput == true && rightCollision == false && xPos < (9-firstRightColumn)){
+        if (joystickRightInput == true && rightCollision == false && xPos < (9-firstRightColumn) && (millis() - moveTime > 100)){
           xPos++;
-        }      
+          moveTime = millis();
+        }     
+
+        if (buttonOneInput == false){
+          rotated = false;
+        } 
         
-        if (buttonOneInput == true && (millis() - currentTime > 130)){
+        if (buttonOneInput == true && rotated == false){
+          rotated = true;
           pieceRotation = ++pieceRotation%4;
-          currentTime = millis();
 
           getFirstColumns();
 
@@ -464,7 +504,9 @@ void gameOne(){
 
           if (xPos == 7 && firstRightColumn == 3){
             xPos--;
-          }                              
+          }     
+
+          rotationTime = millis();                         
         }
         
 
@@ -478,9 +520,16 @@ void gameOne(){
         }
 
         // Delay before piece moves
-        delay(75);
+        if (joystickDownInput){
+          gameDelay = 25;
+        }
+        else{
+          gameDelay = 25*12;
+        }
 
-        if (k!=gameDelay/75){
+        delay(25);
+
+        if (k!=gameDelay/25){
           drawGamePiece(55 + xPos*blockSize, 22+(yPos)*blockSize, BLACK);
         }                         
       }
@@ -528,18 +577,23 @@ void gameOne(){
       
       if (rowOccupied == true){
         drawGameMatrix();
+        score++;
       }     
     }
+
+    // Display Score
+    displayScore();
 
     // Check if top of gameMatrix is occupied
     for (int i = 0; i <= 9; i++){
       if (gameMatrix[i][1] != 0){
         success = false;
+        delay(1000);
         break;        
       }
     }
 
-    printGameMatrix(); // temporary 
+    //printGameMatrix(); // temporary 
   }
 }
 
@@ -558,6 +612,18 @@ void drawGameMatrix(){
       }
     } 
   }
+}
+
+void displayScore(){
+  lcd.setTextSize(1);
+
+  lcd.fillRect(5, 20, 39, 19, BLACK);
+  lcd.setCursor(5, 20);
+  lcd.print("Score:\n");
+  lcd.setCursor(5, lcd.getCursorY());
+  lcd.print(score);
+
+  lcd.setTextSize(2);
 }
 
 void drawGamePiece(int x1, int y1, int color){
