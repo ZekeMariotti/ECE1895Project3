@@ -36,6 +36,7 @@ unsigned long score = 0;
 // Game One: Tetris
 int blockSize = 5;
 int gamePiece[64] = {0};
+int nextGamePiece[64] = {0};
 int gameMatrix[10][22] = {0};
 
 int nextPiece = 0;
@@ -359,16 +360,23 @@ void gameOne(){
   success = true;
   score = 0;
   lines = 0;
-  level = lines/10;
+  level = 0;
 
   int numRowsCleared = 0;
+  int pieceColorIndex = 0;
+  int nextPieceColorIndex = 0;
   bool collision = false;
   bool leftCollision = false;
   bool rightCollision = false;
   bool rowOccupied = false;
   bool rotated = false;
   pieceRotation = 0;
-  gameDelay = 25*12; // Game delay needs to be multiple of 25 ms
+  
+  // Game delay needs to be multiple of 25 ms
+  int defaultGameDelay = 25*20;
+  gameDelay = defaultGameDelay - (level*25);
+  if (gameDelay < 50)
+    gameDelay = 50; 
 
   // Reset gameMatrix
   for (int i = 0; i <= 21; i++){
@@ -384,11 +392,16 @@ void gameOne(){
   
   // Draw game background
   lcd.fillScreen(BLACK);
-  lcd.drawRect(54, 20, 52, 108, WHITE); // 
-  lcd.drawRect(2, 20, 44, 24, WHITE);
-  lcd.drawRect(2, 48, 44, 48, WHITE);
+  lcd.drawRect(54, 20, 52, 108, WHITE); // main game area
+  lcd.drawRect(2, 20, 44, 24, WHITE); // score
+  lcd.drawRect(2, 48, 44, 48, WHITE); // level and lines
+  lcd.drawRect(114, 20, 30, 30, WHITE); // next piece
 
   displayScore();
+
+  // Set first piece
+  nextPiece = random(1, 8);
+  nextPieceColorIndex = getNextPiece();
 
   
 
@@ -397,11 +410,23 @@ void gameOne(){
     // Reset xPos, yPos, and collision
     xPos = 3;
     yPos = 0;
+    pieceRotation = 0;
     collision = false;
     
     // Color index (1 - 7)
+    setGamePiece(nextGamePiece);
+    pieceColorIndex = nextPieceColorIndex;
+    Serial.print("pieceColorIndex: ");
+    Serial.print(pieceColorIndex);
+    Serial.print("\nnextPieceColorIndex: ");
+    Serial.print(nextPieceColorIndex);
+    Serial.print("\n\n");
+
     nextPiece = random(1, 8);
-    int pieceColorIndex = getNextPiece();
+    nextPieceColorIndex = getNextPiece();
+    drawNextPiece(nextPieceColorIndex);
+    
+    
 
     // While there is no piece collisions
     moveTime = millis();
@@ -473,10 +498,10 @@ void gameOne(){
 
         // Draw pieces
         if (yPos == 0){
-          drawGamePiece(55 + xPos*blockSize, 22+(yPos)*blockSize, getPieceColor(nextPiece));
+          drawGamePiece(55 + xPos*blockSize, 22+(yPos)*blockSize, getPieceColor(pieceColorIndex), gamePiece);
         }
         else{   
-          drawGamePiece(55 + xPos*blockSize, 22+(yPos)*blockSize, getPieceColor(nextPiece));
+          drawGamePiece(55 + xPos*blockSize, 22+(yPos)*blockSize, getPieceColor(pieceColorIndex), gamePiece);
         }
 
         // Delay before piece moves
@@ -484,13 +509,15 @@ void gameOne(){
           gameDelay = 25;
         }
         else{
-          gameDelay = 25*12;
+          gameDelay = defaultGameDelay - (level*25);
+            if (gameDelay < 50)
+            gameDelay = 50; 
         }
 
         delay(25);
 
         if (k!=gameDelay/25){
-          drawGamePiece(55 + xPos*blockSize, 22+(yPos)*blockSize, BLACK);
+          drawGamePiece(55 + xPos*blockSize, 22+(yPos)*blockSize, BLACK, gamePiece);
         }                         
       }
 
@@ -504,7 +531,7 @@ void gameOne(){
 
       // If no collision, erase piece from display and increase yPos
       if (collision == false){
-        drawGamePiece(55 + xPos*blockSize, 22+(yPos)*blockSize, BLACK);
+        drawGamePiece(55 + xPos*blockSize, 22+(yPos)*blockSize, BLACK, gamePiece);
         yPos++;
       }      
     }
@@ -618,9 +645,21 @@ void displayScore(){
   lcd.setTextSize(2);
 }
 
-void drawGamePiece(int x1, int y1, int color){
+void drawNextPiece(int nextPieceColorIndex){
+  lcd.setTextSize(1);
+
+  lcd.fillRect(115, 21, 28, 28, BLACK);
+  lcd.setCursor(117, 23);
+  lcd.print("Next");
+  drawGamePiece(119, 32, getPieceColor(nextPieceColorIndex), nextGamePiece);
+
+  lcd.setTextSize(2);
+}
+
+
+void drawGamePiece(int x1, int y1, int color, int piece[64]){
   for (int i = 0+pieceRotation*16; i <= 15+pieceRotation*16; i++){
-    if (gamePiece[i] == 1){
+    if (piece[i] == 1){
       if (color == BLACK){
         lcd.fillRect(x1+blockSize*(i%4), y1+blockSize*((i%16)/4), blockSize, blockSize, BLACK);    
       }
@@ -632,43 +671,34 @@ void drawGamePiece(int x1, int y1, int color){
   }
 }
 
-int getNextPiece(){
-  int piece = 0;
-  
+int getNextPiece(){  
   switch (nextPiece){
     case 1:
-      setGamePiece(piece_I);
-      piece = 1;
+      setNextGamePiece(piece_I);
       break;
     case 2:
-      setGamePiece(piece_L);
-      piece = 2;
+      setNextGamePiece(piece_L);
       break;
     case 3:
-      setGamePiece(piece_J);
-      piece = 3;
+      setNextGamePiece(piece_J);
       break;
     case 4:
-      setGamePiece(piece_T);
-      piece = 4;
+      setNextGamePiece(piece_T);
       break;
     case 5:
-      setGamePiece(piece_S);
-      piece = 5;
+      setNextGamePiece(piece_S);
       break;
     case 6:
-      setGamePiece(piece_Z);
-      piece = 6;
+      setNextGamePiece(piece_Z);
       break;
     case 7:
-      setGamePiece(piece_O);
-      piece = 7;
+      setNextGamePiece(piece_O);
       break; 
   }
 
   getFirstColumns();
 
-  return piece;
+  return nextPiece;
 }
 
 void getFirstColumns(){
@@ -723,6 +753,12 @@ int getPieceColor(int nxtPiece){
 void setGamePiece(int piece[64]){
   for (int i=0; i<=63; i++){
     gamePiece[i] = piece[i];
+  }  
+}
+
+void setNextGamePiece(int piece[64]){
+  for (int i=0; i<=63; i++){
+    nextGamePiece[i] = piece[i];
   }  
 }
 
