@@ -31,7 +31,7 @@ int selectedGame = 1;
 int mainMenuRows = 3;
 int mainMenuColumns = 3;
 int numGames = 3;
-int score = 0;
+unsigned long score = 0;
 
 // Game One: Tetris
 int blockSize = 5;
@@ -45,6 +45,8 @@ int yPos = 0;
 int firstLeftColumn = 0;
 int firstRightColumn = 0;
 int gameDelay = 0;
+int lines = 0;
+int level = lines/10;
 unsigned long rotationTime = 0;
 unsigned long moveTime = 0;
 
@@ -268,9 +270,6 @@ void setup() {
   lcd.fillScreen(BLACK);
   lcd.setTextColor(RED);
   lcd.setTextSize(2);
-  lcd.print("lcd test\n");
-
-  Serial.print("lcd test\n");
 
   /*delay(1000);
   currentTime = millis();
@@ -301,8 +300,6 @@ void setup() {
 
   // Use analog input to generate random noise to choose a correct input
   randomSeed(analogRead(0));
-
-  delay(500);
 }
 
 // Main Loop
@@ -330,48 +327,6 @@ void loop() {
   else if(joystickDownInput == true && selectedGame <= numGames-mainMenuColumns){
     selectedGame += mainMenuColumns;
   }
-
- // Test inputs
-  if(joystickLeftInput == true){ 
-    lcd.fillScreen(BLACK);
-    lcd.setCursor(0, 0);
-    lcd.print("joystickLeft"); 
-    Serial.print("joystickLeft\n");          
-  }
-  if(joystickUpInput == true){
-    lcd.fillScreen(BLACK);
-    lcd.setCursor(0, 0);
-    lcd.print("joystickUpInput"); 
-    Serial.print("joystickUp\n");
-  }
-  if(joystickRightInput == true){
-    lcd.fillScreen(BLACK);
-    lcd.setCursor(0, 0);
-    lcd.print("joystickRightInput"); 
-    Serial.print("joystickRight\n");
-  }
-  if(joystickDownInput == true){
-    lcd.fillScreen(BLACK);
-    lcd.setCursor(0, 0);
-    lcd.print("joystickDownInput"); 
-    Serial.print("joystickDown\n");
-  }
-  if(buttonOneInput == true){
-    lcd.fillScreen(BLACK);
-    lcd.setCursor(0, 0);
-    lcd.print("buttonOneInput"); 
-  }
-  if(buttonTwoInput == true){
-    lcd.fillScreen(BLACK);
-    lcd.setCursor(0, 0);
-    lcd.print("buttonTwoInput"); 
-  }
-  if(coinSlotButtonInput == true){
-    lcd.fillScreen(BLACK);
-    lcd.setCursor(0, 0);
-    lcd.print("coinSlotButtonInput");
-  }
-  // end test inputs
 
   if(startButtonInput == true){
     startScreen = false;
@@ -403,6 +358,10 @@ void gameOne(){
   // Reset Starting variables
   success = true;
   score = 0;
+  lines = 0;
+  level = lines/10;
+
+  int numRowsCleared = 0;
   bool collision = false;
   bool leftCollision = false;
   bool rightCollision = false;
@@ -425,8 +384,9 @@ void gameOne(){
   
   // Draw game background
   lcd.fillScreen(BLACK);
-  lcd.drawRect(54, 20, 52, 108, WHITE);
-  lcd.drawRect(2, 17, 44, 24, WHITE);
+  lcd.drawRect(54, 20, 52, 108, WHITE); // 
+  lcd.drawRect(2, 20, 44, 24, WHITE);
+  lcd.drawRect(2, 48, 44, 48, WHITE);
 
   displayScore();
 
@@ -573,13 +533,32 @@ void gameOne(){
             gameMatrix[n][m] = gameMatrix[n][m-1];           
           }
         }
-      }
-      
-      if (rowOccupied == true){
+
         drawGameMatrix();
-        score++;
-      }     
+        numRowsCleared++;
+        lines++;
+        level = lines/10;
+      }    
     }
+
+    // Increase score based on level and lines cleared
+    switch (numRowsCleared){
+      case 0:
+        break;
+      case 1:
+        score += 40*(level+1);
+        break;
+      case 2:
+        score += 100*(level+1);
+        break;
+      case 3:
+        score += 300*(level+1);
+        break;
+      case 4:
+        score += 1200*(level+1);
+        break; 
+    }
+    numRowsCleared = 0;
 
     // Display Score
     displayScore();
@@ -617,11 +596,24 @@ void drawGameMatrix(){
 void displayScore(){
   lcd.setTextSize(1);
 
-  lcd.fillRect(5, 20, 39, 19, BLACK);
-  lcd.setCursor(5, 20);
+  lcd.fillRect(3, 21, 42, 22, BLACK);
+  lcd.setCursor(5, 23);
   lcd.print("Score:\n");
   lcd.setCursor(5, lcd.getCursorY());
   lcd.print(score);
+
+  lcd.fillRect(3, 49, 42, 46, BLACK);
+  lcd.setCursor(5, 51);
+  lcd.print("Level:");
+  lcd.print("\n");
+  lcd.setCursor(5, lcd.getCursorY());
+  lcd.print(level);
+  lcd.print("\n");
+  lcd.setCursor(5, lcd.getCursorY());
+  lcd.print("Lines:");
+  lcd.print("\n");
+  lcd.setCursor(5, lcd.getCursorY());
+  lcd.print(lines);
 
   lcd.setTextSize(2);
 }
