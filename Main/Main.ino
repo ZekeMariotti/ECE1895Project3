@@ -369,7 +369,8 @@ void gameOne(){
   bool leftCollision = false;
   bool rightCollision = false;
   bool rowOccupied = false;
-  bool rotated = false;
+  bool leftRotated = false;
+  bool rightRotated = false;
   pieceRotation = 0;
   
   // Game delay needs to be multiple of 25 ms
@@ -464,12 +465,49 @@ void gameOne(){
         }     
 
         if (buttonOneInput == false){
-          rotated = false;
+          rightRotated = false;
         } 
+
+        if (buttonTwoInput == false){
+          leftRotated = false;
+        }
         
-        if (buttonOneInput == true && rotated == false){
-          rotated = true;
+        if (buttonOneInput == true && rightRotated == false){
+          rightRotated = true;
           pieceRotation = ++pieceRotation%4;
+
+          getFirstColumns();
+
+          if (xPos == -2 && firstLeftColumn == 0){
+            xPos++;
+          }
+          if (xPos == -1 && firstLeftColumn == 0){
+            xPos++;
+          }
+
+          if (xPos == 9 && (firstRightColumn == 3 || firstRightColumn == 2)){
+            xPos--;
+          }
+          if (xPos == 8 && (firstRightColumn == 3 || firstRightColumn == 2)){
+            xPos--;
+          }
+
+          if (xPos == 7 && firstRightColumn == 3){
+            xPos--;
+          }     
+
+          rotationTime = millis();                         
+        }
+
+        if (buttonTwoInput == true && leftRotated == false){
+          leftRotated = true;
+
+          if (pieceRotation == 0){
+            pieceRotation = 3;
+          }
+          else{
+            pieceRotation -= 1;
+          }
 
           getFirstColumns();
 
