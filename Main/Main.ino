@@ -28,9 +28,10 @@
 bool success = false;
 bool startScreen = false;
 int selectedGame = 1;
-int mainMenuRows = 3;
-int mainMenuColumns = 3;
-int numGames = 3;
+int startMenuRows = 2;
+int startMenuColumns = 3;
+int numGames = 6;
+unsigned long backgroundColor = 0;
 unsigned long score = 0;
 
 // Game One: Tetris
@@ -269,8 +270,9 @@ void setup() {
 
   lcd.setRotation(1);
   lcd.fillScreen(BLACK);
+  backgroundColor = 0xD283;
   lcd.setTextColor(RED);
-  lcd.setTextSize(2);
+  lcd.setTextSize(1);
 
   /*delay(1000);
   currentTime = millis();
@@ -307,27 +309,52 @@ void setup() {
 void loop() {
   // Show start screen
   if (startScreen == false){
+    selectedGame = 1;
     lcd.fillScreen(BLACK);
-    lcd.setCursor(0, 0);
-    lcd.print("Press Start");
+    lcd.setTextColor(0x9800);
+
+    // Draw game selectors
+    lcd.fillRect(0, 0, 160, 20, backgroundColor);
+    lcd.setTextSize(2);
+    lcd.setCursor(25, 2);
+    lcd.print("Game Menu");
+    lcd.setTextSize(1);
+
+    drawStartMenuGame(10, 30, "Tetris");
+    drawStartMenuGame(60, 30, "Game 2");
+    drawStartMenuGame(110, 30, "Game 3");
+    drawStartMenuGame(10, 80, "Game 4");
+    drawStartMenuGame(60, 80, "Game 5");
+    drawStartMenuGame(110, 80, "Game 6");
+
     startScreen = true;
-  }  
+    delay(100);
+  }
   
   readInputs();
 
   // Change game selction 
   if(joystickLeftInput == true && selectedGame >= 2){
+    lcd.drawRoundRect(10+50*((selectedGame%(startMenuColumns+1))-1), 30+50*((selectedGame/(startMenuColumns+1))), 40, 40, 7, WHITE);
     selectedGame--;           
   }
-  else if(joystickUpInput == true && selectedGame > mainMenuColumns){
-    selectedGame -= mainMenuColumns;
+  else if(joystickUpInput == true && selectedGame > startMenuColumns){
+    lcd.drawRoundRect(10+50*((selectedGame%(startMenuColumns+1))-1), 30+50*((selectedGame/(startMenuColumns+1))), 40, 40, 7, WHITE);
+    selectedGame -= startMenuColumns;
   }
   else if(joystickRightInput == true && selectedGame < numGames){
+    lcd.drawRoundRect(10+50*((selectedGame%(startMenuColumns+1))-1), 30+50*((selectedGame/(startMenuColumns+1))), 40, 40, 7, WHITE);
     selectedGame++;
   }
-  else if(joystickDownInput == true && selectedGame <= numGames-mainMenuColumns){
-    selectedGame += mainMenuColumns;
+  else if(joystickDownInput == true && selectedGame <= numGames-startMenuColumns){
+    lcd.drawRoundRect(10+50*((selectedGame%(startMenuColumns+1))-1), 30+50*((selectedGame/(startMenuColumns+1))), 40, 40, 7, WHITE);
+    selectedGame += startMenuColumns;
   }
+
+  lcd.drawRoundRect(10+50*((selectedGame%(startMenuColumns+1))-1), 30+50*((selectedGame/(startMenuColumns+1))), 40, 40, 7, CYAN);
+  delay(100);
+  Serial.print(selectedGame);
+  Serial.print("\n");
 
   if(startButtonInput == true){
     startScreen = false;
@@ -342,11 +369,10 @@ void loop() {
       case 3:      
         gameThree();
         break;
-    }        
-  }
-
-  // Reset selectedGame to 1
-  selectedGame = 1;  
+    }
+    // Reset selectedGame to 1
+    selectedGame = 1;         
+  } 
 }
 
 
@@ -392,6 +418,7 @@ void gameOne(){
   }
   
   // Draw game background
+  lcd.setTextColor(RED);
   lcd.fillScreen(BLACK);
   lcd.drawRect(54, 20, 52, 108, WHITE); // main game area
   lcd.drawRect(2, 20, 44, 24, WHITE); // score
@@ -823,6 +850,13 @@ void gameTwo(){
 // Game Three:
 void gameThree(){
 
+}
+
+// Draws games in start menu
+void drawStartMenuGame(int x, int y, char text[]){
+    lcd.drawRoundRect(x, y, 40, 40, 7, WHITE);
+    lcd.setCursor(x+2, y+15);
+    lcd.print(text);
 }
 
 // Reads all input pins into bool variables
