@@ -335,44 +335,35 @@ void loop() {
 
   // Change game selction 
   if(joystickLeftInput == true && selectedGame >= 2){
-    lcd.drawRoundRect(10+50*((selectedGame%(startMenuColumns+1))-1), 30+50*((selectedGame/(startMenuColumns+1))), 40, 40, 7, WHITE);
+    lcd.drawRoundRect(10+50*(((selectedGame-1)%(startMenuColumns))), 30+50*((selectedGame/(startMenuColumns+1))), 40, 40, 7, WHITE);
     selectedGame--;           
   }
   else if(joystickUpInput == true && selectedGame > startMenuColumns){
-    lcd.drawRoundRect(10+50*((selectedGame%(startMenuColumns+1))-1), 30+50*((selectedGame/(startMenuColumns+1))), 40, 40, 7, WHITE);
+    lcd.drawRoundRect(10+50*(((selectedGame-1)%(startMenuColumns))), 30+50*((selectedGame/(startMenuColumns+1))), 40, 40, 7, WHITE);
     selectedGame -= startMenuColumns;
   }
   else if(joystickRightInput == true && selectedGame < numGames){
-    lcd.drawRoundRect(10+50*((selectedGame%(startMenuColumns+1))-1), 30+50*((selectedGame/(startMenuColumns+1))), 40, 40, 7, WHITE);
+    lcd.drawRoundRect(10+50*(((selectedGame-1)%(startMenuColumns))), 30+50*((selectedGame/(startMenuColumns+1))), 40, 40, 7, WHITE);
     selectedGame++;
   }
   else if(joystickDownInput == true && selectedGame <= numGames-startMenuColumns){
-    lcd.drawRoundRect(10+50*((selectedGame%(startMenuColumns+1))-1), 30+50*((selectedGame/(startMenuColumns+1))), 40, 40, 7, WHITE);
+    lcd.drawRoundRect(10+50*(((selectedGame-1)%(startMenuColumns))), 30+50*((selectedGame/(startMenuColumns+1))), 40, 40, 7, WHITE);
     selectedGame += startMenuColumns;
   }
 
-  lcd.drawRoundRect(10+50*((selectedGame%(startMenuColumns+1))-1), 30+50*((selectedGame/(startMenuColumns+1))), 40, 40, 7, CYAN);
-  delay(100);
-  Serial.print(selectedGame);
-  Serial.print("\n");
+  // Draw cyan border around selected game
+  lcd.drawRoundRect(10+50*(((selectedGame-1)%(startMenuColumns))), 30+50*((selectedGame/(startMenuColumns+1))), 40, 40, 7, CYAN);
 
-  if(startButtonInput == true){
-    startScreen = false;
-    
-    switch(selectedGame){
-      case 1:
-        gameOne();
-        break;
-      case 2:
-        gameTwo();
-        break;
-      case 3:      
-        gameThree();
-        break;
+  // Multiple delays to prevent missed start button input
+  for (int i = 1; i <= 10; i++){
+    readInputs();
+    delay(15);
+
+    if(startButtonInput == true){
+      playSelectedGame();         
     }
-    // Reset selectedGame to 1
-    selectedGame = 1;         
-  } 
+  }
+
 }
 
 
@@ -444,11 +435,6 @@ void gameOne(){
     // Color index (1 - 7)
     setGamePiece(nextGamePiece);
     pieceColorIndex = nextPieceColorIndex;
-    Serial.print("pieceColorIndex: ");
-    Serial.print(pieceColorIndex);
-    Serial.print("\nnextPieceColorIndex: ");
-    Serial.print(nextPieceColorIndex);
-    Serial.print("\n\n");
 
     nextPiece = random(1, 8);
     nextPieceColorIndex = getNextPiece();
@@ -842,14 +828,71 @@ void printGameMatrix(){
   Serial.print("\n");
 }
 
+void playSelectedGame(){
+  startScreen = false;
+    
+    switch(selectedGame){
+      case 1:
+        gameOne();
+        break;
+      case 2:
+        gameTwo();
+        break;
+      case 3:      
+        gameThree();
+        break;
+      case 4:
+        gameFour();
+        break;
+      case 5:
+        gameFive();
+        break;
+      case 6:
+        gameSix();
+        break;
+    }
+
+    // Reset selectedGame to 1
+    selectedGame = 1;
+}
+
 // Game Two:
 void gameTwo(){
-
+  lcd.fillScreen(BLACK);
+  lcd.setCursor(10, lcd.height()/2);
+  lcd.print("Game 2 not implemented");
+  delay(5000);
 }
 
 // Game Three:
 void gameThree(){
+  lcd.fillScreen(BLACK);
+  lcd.setCursor(10, lcd.height()/2);
+  lcd.print("Game 3 not implemented");
+  delay(5000);
+}
+// Game Four:
+void gameFour(){
+  lcd.fillScreen(BLACK);
+  lcd.setCursor(10, lcd.height()/2);
+  lcd.print("Game 4 not implemented");
+  delay(5000);
+}
 
+// Game Five:
+void gameFive(){
+  lcd.fillScreen(BLACK);
+  lcd.setCursor(10, lcd.height()/2);
+  lcd.print("Game 5 not implemented");
+  delay(5000);
+}
+
+// Game Six:
+void gameSix(){
+  lcd.fillScreen(BLACK);
+  lcd.setCursor(10, lcd.height()/2);
+  lcd.print("Game 6 not implemented");
+  delay(5000);
 }
 
 // Draws games in start menu
