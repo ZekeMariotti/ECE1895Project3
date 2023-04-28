@@ -268,7 +268,7 @@ void setup() {
   // lcd
   lcd.initR(INITR_BLACKTAB);
 
-  lcd.setRotation(1);
+  lcd.setRotation(3);
   lcd.fillScreen(BLACK);
   backgroundColor = 0xD283;
   lcd.setTextColor(RED);
@@ -276,6 +276,7 @@ void setup() {
 
   /*delay(1000);
   currentTime = millis();
+
 
   while (!DFPlayer.begin(SoftwareSerial)) {
     delay(1000);
