@@ -581,7 +581,7 @@ void gameOne(){
           
           // Check if current square is occupied
           rotateOccupied = false;
-          
+
           for (int i = 0+pieceRotation*16; i <= 15+pieceRotation*16; i++){
               if (gamePiece[i] == 1 && rotateOccupied == false){
                 if (gameMatrix[xPos+(i%4)][yPos+((i%16)/4)] != 0)
@@ -610,16 +610,9 @@ void gameOne(){
 
           rotationTime = millis();                         
         }
-        
-
-
-        // Draw pieces
-        if (yPos == 0){
-          drawGamePiece(55 + xPos*blockSize, 22+(yPos)*blockSize, getPieceColor(pieceColorIndex), gamePiece);
-        }
-        else{   
-          drawGamePiece(55 + xPos*blockSize, 22+(yPos)*blockSize, getPieceColor(pieceColorIndex), gamePiece);
-        }
+          
+        // Draw game pieces
+        drawGamePiece(55 + xPos*blockSize, 22+(yPos)*blockSize, getPieceColor(pieceColorIndex), gamePiece);
 
         // Delay before piece moves
         if (joystickDownInput){
