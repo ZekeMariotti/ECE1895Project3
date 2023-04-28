@@ -389,6 +389,7 @@ void gameOne(){
   bool rowOccupied = false;
   bool leftRotated = false;
   bool rightRotated = false;
+  bool rotateOccupied = false;
   pieceRotation = 0;
   
   // Game delay needs to be multiple of 25 ms
@@ -468,16 +469,19 @@ void gameOne(){
             }
         }
         
+        // Move left
         if (joystickLeftInput == true && leftCollision == false && xPos > (0-firstLeftColumn) && (millis() - moveTime > 100)){
           xPos--;
           moveTime = millis();
         }
 
+        // Move right
         if (joystickRightInput == true && rightCollision == false && xPos < (9-firstRightColumn) && (millis() - moveTime > 100)){
           xPos++;
           moveTime = millis();
         }     
 
+        // Variables to prevent holding down buttons to rotate
         if (buttonOneInput == false){
           rightRotated = false;
         } 
@@ -486,6 +490,7 @@ void gameOne(){
           leftRotated = false;
         }
         
+        // Right rotate
         if (buttonOneInput == true && rightRotated == false){
           rightRotated = true;
           pieceRotation = ++pieceRotation%4;
@@ -508,11 +513,41 @@ void gameOne(){
 
           if (xPos == 7 && firstRightColumn == 3){
             xPos--;
-          }     
+          }
+          
+          // Check if current square is occupied
+          rotateOccupied = false;
+
+          for (int i = 0+pieceRotation*16; i <= 15+pieceRotation*16; i++){
+              if (gamePiece[i] == 1 && rotateOccupied == false){
+                if (gameMatrix[xPos+(i%4)][yPos+((i%16)/4)] != 0)
+                  switch (i%4){
+                    case 0:
+                      pieceRotation--;
+                      rotateOccupied = true;
+                      break;
+                    case 1:
+                      pieceRotation--;
+                      rotateOccupied = true;
+                      break;
+                    case 2:
+                      pieceRotation--;
+                      rotateOccupied = true;
+                      break;
+                    case 3:
+                      pieceRotation--;
+                      rotateOccupied = true;
+                      break;
+                  }
+                  if (pieceRotation == -1)
+                    pieceRotation = 3;              
+              }
+          }
 
           rotationTime = millis();                         
         }
 
+        // Left rotate
         if (buttonTwoInput == true && leftRotated == false){
           leftRotated = true;
 
@@ -541,7 +576,37 @@ void gameOne(){
 
           if (xPos == 7 && firstRightColumn == 3){
             xPos--;
-          }     
+          }   
+
+          
+          // Check if current square is occupied
+          rotateOccupied = false;
+          
+          for (int i = 0+pieceRotation*16; i <= 15+pieceRotation*16; i++){
+              if (gamePiece[i] == 1 && rotateOccupied == false){
+                if (gameMatrix[xPos+(i%4)][yPos+((i%16)/4)] != 0)
+                  switch (i%4){
+                    case 0:
+                      pieceRotation++;
+                      rotateOccupied = true;
+                      break;
+                    case 1:
+                      pieceRotation++;
+                      rotateOccupied = true;
+                      break;
+                    case 2:
+                      pieceRotation++;
+                      rotateOccupied = true;
+                      break;
+                    case 3:
+                      pieceRotation++;
+                      rotateOccupied = true;
+                      break;
+                  }
+                  if (pieceRotation == 5)
+                    pieceRotation = 0;              
+              }
+          }  
 
           rotationTime = millis();                         
         }
@@ -650,8 +715,7 @@ void gameOne(){
         break;        
       }
     }
-
-    //printGameMatrix(); // temporary 
+     
   }
 }
 
